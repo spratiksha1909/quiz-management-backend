@@ -1,0 +1,45 @@
+services:
+  # 1. MySQL Database Service (Private Service)
+  - type: pserv
+    name: mysql-db
+    env: docker
+    image:
+      url: mysql:8.0
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        value: rootpassword
+      - key: MYSQL_DATABASE
+        value: quiz_db
+
+  # 2. Java Backend Web Service
+  - type: web
+    name: quiz-backend
+    env: docker
+    rootDir: .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_HOST
+        value: mysql-db
+      - key: DB_PORT
+        value: 3306
+      - key: DB_NAME
+        value: quiz_db
+      - key: DB_USERNAME
+        value: root
+      - key: DB_PASSWORD
+        value: rootpassword
+
+  # 3. React Frontend Static Site
+  - type: static
+    name: quiz-frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

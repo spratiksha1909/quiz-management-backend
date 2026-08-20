@@ -1,12 +1,12 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV MYSQL_ROOT_PASSWORD=rootpassword
-ENV MYSQL_DATABASE=quiz_db
+ENV MYSQL_DATABASE=quizmanegment
 
-# Install OpenJDK 17, Maven, MySQL Server, and Supervisor
+# Install OpenJDK 21, Maven, MySQL Server, and Supervisor
 RUN apt-get update && apt-get install -y \
-    openjdk-17-jdk \
+    openjdk-21-jdk \
     maven \
     mysql-server \
     supervisor \
@@ -23,9 +23,10 @@ COPY . .
 RUN mvn clean package -DskipTests
 
 # Supervisor Configuration to run MySQL & Java concurrently
+# Using a wildcard (*.jar) so it runs regardless of the exact project name in pom.xml
 RUN echo '[supervisord]\nnodaemon=true\n' > /etc/supervisor/conf.d/supervisord.conf && \
     echo '[program:mysql]\ncommand=/usr/bin/mysqld_safe\nautostart=true\nautorestart=true\n' >> /etc/supervisor/conf.d/supervisord.conf && \
-    echo '[program:java]\ncommand=java -jar /app/target/quiz-management-backend-0.0.1-SNAPSHOT.jar\nautostart=true\nautorestart=true\n' >> /etc/supervisor/conf.d/supervisord.conf
+    echo '[program:java]\ncommand=sh -c "java -jar /app/target/*.jar"\nautostart=true\nautorestart=true\n' >> /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 8080 3306
 

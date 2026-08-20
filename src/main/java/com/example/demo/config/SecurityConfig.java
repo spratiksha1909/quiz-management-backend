@@ -1,7 +1,9 @@
-package com.example.demo.config; // तुमच्या पॅकेजचे नाव
+package com.example.demo.config; // Ensure this matches your project's package structure
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,11 +27,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // CSRF बंद करणे आवश्यक आहे
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable()) 
+            .cors(Customizer.withDefaults()) // Uses the corsConfigurationSource Bean below
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/student/**").permitAll() // सर्व Auth Endpoints ओपन करा
-                .anyRequest().permitAll() // टेस्टिंगसाठी पूर्ण Access देण्यासाठी (नंतर authenticated() करा)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Explicitly permit preflight checks
+                .requestMatchers("/api/auth/**", "/api/student/**").permitAll()
+                .anyRequest().permitAll()
             );
 
         return http.build();
@@ -38,7 +41,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        
+        // Added live Render URL alongside localhost
+        config.setAllowedOrigins(List.of(
+            "http://localhost:5173", 
+            "https://quiz-management-frontend-lduq.onrender.com"
+        ));
+        
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
